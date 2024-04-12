@@ -36,22 +36,22 @@ class ScoreMode(GameMode):
             raise ValueError(f"{player.name} can't do {self.name}.") from exc
 
 
-@dataclass
+@dataclass(init=False)
 class SwimLikeRelayMode(GameMode):
     """Define the mode 'swim-like relay'."""
 
-    atomic_modes: list[GameModeId]
+    atomic_modes: dict[GameModeId, GameMode]
     age_chrono_points: Callable[[float, float], float]
 
     def __init__(
         self,
         name: GameModeId | str,
-        atomic_modes: Iterable[GameModeId],
+        atomic_modes: Iterable[GameMode],
         age_chrono_points: Callable[[float, float], float],
     ) -> None:
         """Initialize a SwimLikeRelayMode from an iterable."""
         super().__init__(name)
-        self.atomic_modes = list(atomic_modes)
+        self.atomic_modes = {mode.name: mode for mode in atomic_modes}
         self.age_chrono_points = age_chrono_points
 
     def points(self, player_for: dict[GameModeId, Player]) -> float:

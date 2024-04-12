@@ -47,14 +47,14 @@ class Player:
         self,
         player_id: PlayerId,
         scores: dict[GameModeId, Perf] | None = None,
-        age: float | None = None,  # On est galant ici
+        age: float | None = None,  # On code galamment ici
     ) -> None:
         """Initialize the name and scores of the player."""
-        self.score_at: dict[GameModeId, Perf]
+        self.perf_at: dict[GameModeId, Perf]
         if scores is None:
-            self.score_at = {}
+            self.perf_at = {}
         else:
-            self.score_at = dict(scores)
+            self.perf_at = dict(scores)
         self.name = player_id
         self.__age = age
 
@@ -68,7 +68,7 @@ class Player:
     @property
     def known_modes(self) -> KeysView[GameModeId]:
         """Iterator over the modes known by self."""
-        return self.score_at.keys()
+        return self.perf_at.keys()
 
     @property
     def age(self) -> float:
