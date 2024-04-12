@@ -1,0 +1,4 @@
+fileignoreconfig:
+- filename: src/solve.py
+  checksum: 18342510a040c37d5c88e83d93c695d6d7195264b9c9530d72f044da70faa52f
+version: ""
