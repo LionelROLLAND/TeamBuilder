@@ -3,7 +3,7 @@
 import logging
 from collections.abc import Iterable
 
-import gurobipy as grb
+import gurobipy as grb  # type: ignore
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from .competition import Competition
