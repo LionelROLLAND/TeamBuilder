@@ -17,8 +17,10 @@ class PlayerId:
     def __str__(self) -> str:
         """Return a natural string representation."""
         if self.distinction is None:
-            return f"{self.fst_name} {self.last_name or ''}"
-        return f"{self.fst_name} {self.last_name or ''} ({self.distinction})"
+            return " ".join(filter(None, [self.fst_name, self.last_name]))
+        return " ".join(
+            filter(None, [self.fst_name, self.last_name, f"({self.distinction})"]),
+        )
 
 
 @dataclass(frozen=True)
