@@ -10,6 +10,7 @@ from .competition import Competition
 from .game_mode import GameModeId
 from .player import Player, PlayerId
 
+BIN = GRB.BINARY
 logger = logging.getLogger("root")
 
 EPS = 10 ** (-5)
@@ -37,36 +38,41 @@ def best_team(
     for player, game_mode in associations_set:
         candidates_for.setdefault(game_mode, set())
         candidates_for[game_mode].add(player)
-    m = grb.Model("OneTeamBuilder")  # pylint: disable=no-member
-    selected_players = m.addVars(players.keys(), GRB.BINARY)
-    associations = m.addVars(associations_set, GRB.BINARY)
+    env = grb.Env(empty=True)  # pylint: disable=no-member
+    env.setParam("OutputFlag", 0)
+    env.start()
+    m = grb.Model(name="OneTeamBuilder", env=env)  # pylint: disable=no-member
+    selected = m.addVars(players.keys(), BIN)
+    associations = m.addVars(associations_set, BIN)
     m.addConstrs(
         (
             sum(
-                associations[player, game_mode]
+                associations[player, game_mode, BIN]
                 for game_mode in competition.score_mode_ids
                 if player in candidates_for[game_mode]
             )
-            <= selected_players[player]
+            <= selected[player, BIN]
             for player in players
         )
     )  # player plays at most one score mode if it is chosen.
     m.addConstrs(
         (
             sum(
-                associations[player, atomic_mode]
-                for atomic_mode in relay_mode.atomic_modes
+                associations[player, atomic_mode, BIN]
+                for atomic_mode in competition.swim_relay_modes[
+                    relay_mode_id
+                ].atomic_modes
                 if player in candidates_for[atomic_mode]
             )
-            <= selected_players[player]
+            <= selected[player, BIN]
             for player in players
-            for relay_mode in competition.swim_relay_modes.values()
+            for relay_mode_id in competition.swim_relay_modes
         )
     )  # player plays at most once atomic mode in each swim relay if it is chosen.
     m.addConstrs(
         (
             sum(
-                associations[player, game_mode]
+                associations[player, game_mode, BIN]
                 for player in players
                 if player in candidates_for[game_mode]
             )
@@ -75,11 +81,15 @@ def best_team(
         )
     )  # 1 player per game mode
     # No more players than the allowed number :
-    m.addConstr(sum(selected_players) <= competition.nb_players)
+    m.addConstr(
+        sum(selected[player, BIN] for player in players) <= competition.nb_players
+    )
     m.setObjective(
         sum(
-            players[player].perf_at[game_mode].score  # type: ignore
-            * associations[player, game_mode]
+            (
+                players[player].perf_at[game_mode].score  # type: ignore
+                * associations[player, game_mode, BIN]
+            )
             for player, game_mode in associations_set
             if game_mode in competition.score_mode_ids
         ),
@@ -89,5 +99,5 @@ def best_team(
     return {
         game_mode: player
         for (player, game_mode) in associations_set
-        if associations[player, game_mode].X >= 1 - EPS
+        if associations[player, game_mode, BIN].X >= 1 - EPS
     }
